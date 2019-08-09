@@ -8,7 +8,7 @@
 
 namespace fs = std::filesystem;
 
-bool passBlacklistedEntries(const fs::directory_entry& entry, const std::vector<std::string_view>& blacklist) {
+bool passBlacklistedEntries(const fs::directory_entry &entry, const std::vector<std::string_view> &blacklist) {
     for (const auto &blacklisted : blacklist) {
         if (entry.path().filename().string() == blacklisted.data())
             return false;
@@ -16,28 +16,32 @@ bool passBlacklistedEntries(const fs::directory_entry& entry, const std::vector<
     return true;
 }
 
-int main() {
-    std::string output_path;
-    std::string input;
+int main(int argc, char *argv[]) {
+    if (argc < 2)
+        return errorHandler.error(EXIT_CODE::TOO_FEW_ARGUMENTS);
+
+    if (!fs::is_directory(argv[1]))
+        return errorHandler.error(EXIT_CODE::ISNT_DIRECTORY);
+
+    std::string input = argv[1];
     std::vector<std::string> files;
-    std::cout << "Output save directory: ";
-    std::cin >> output_path;
+    std::ofstream output_file(input + "repostruct.txt");
+    const std::string fname(input + "rsconfig.toml");
 
-    if (!fs::is_directory(output_path))
-        return errorHandler.error(ERROR_CODE::ISNT_DIRECTORY);
+    toml::value config;
 
-    std::ofstream output_file(output_path + "output.txt");
+    try {
+        config = toml::parse(fname);
+    } catch (std::runtime_error ex) {
+        return errorHandler.error(EXIT_CODE::NO_CONFIG_FILE_FOUND);
+    }
 
-    std::cout << "Directory from where structure will be generated: ";
-    std::cin >> input;
-
-    if (!fs::is_directory(input))
-        return errorHandler.error(ERROR_CODE::ISNT_DIRECTORY);
-
-    const auto config = toml::parse(input + "rsconfig.toml");
     const auto blacklist = toml::find<std::vector<std::string_view>>(config, "blacklist");
 
     for (const auto &entry : fs::directory_iterator(input)) {
+        if (entry.path().filename().string() == "repostruct.txt")
+            continue;
+
         if (passBlacklistedEntries(entry, blacklist)) {
             if (entry.is_directory()) {
                 files.emplace_back("+-- " + entry.path().filename().string().append("/"));
@@ -57,5 +61,7 @@ int main() {
     for (const auto &entry : files)
         output_file << std::setw(40) << std::left << entry << std::right << "// Comment placeholder" << std::endl;
 
-    return 0;
+    std::cout << "Successfully generated structure." << std::endl;
+
+    return static_cast<int>(EXIT_CODE::SUCCESSFUL);
 }

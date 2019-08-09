@@ -9,21 +9,26 @@
 #include <iomanip>
 
 
-enum class ERROR_CODE {
-    ISNT_DIRECTORY = 1,
+enum class EXIT_CODE {
+    SUCCESSFUL = 0,
+    ISNT_DIRECTORY,
+    TOO_FEW_ARGUMENTS,
+    NO_CONFIG_FILE_FOUND
 };
 
 class ErrorHandler {
 public:
-    std::string errorCodeToString(ERROR_CODE code) {
+    std::string errorCodeToString(EXIT_CODE code) {
         std::string_view error_codes_strings[] = {
                 " ", // Filler
                 "IS_NOT_DIRECTORY",
+                "TOO_FEW_ARGUMENTS",
+                "NO_CONFIG_FILE_FOUND"
         };
         return error_codes_strings[static_cast<int>(code)].data();
     }
 
-    int error(ERROR_CODE code) {
+    int error(EXIT_CODE code) {
         std::cout << std::setw(25) << "An error has occured." << std::endl
                   << std::setw(15) << std::left << "Why:" << std::right << this->errorCodeToString(code) << std::endl;
 
