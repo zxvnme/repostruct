@@ -1,0 +1,1 @@
+blacklist = [".git", "cmake-build-debug", "toml", ".idea"]
